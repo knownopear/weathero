@@ -1,73 +1,68 @@
 import React, { Component } from 'react'
 import { Container, Row, Col } from 'reactstrap'
+
+import { graphql, compose } from 'react-apollo' // to help us run the queries
+import gql from 'graphql-tag' // write graphql queries
+
 import '../styles/App.css'
 
 class App extends Component {
-  constructor() {
-    super()
-    // this.state = {
-    //   currently: {},
-    //   timezone: ''
-    // }
-  }
-
-  // _convertToCelcius(degree) {
-  //   const celcius = ((degree - 32) * 5) / 9
-  //   return Math.round(celcius)
-  // }
 
   render() {
-    // if (!this.state.timezone) {
-    //   return (
-    //     <Container>
-    //       Loading...
-    //     </Container>
-    //   )
-    // }
 
-    let {currently, timezone} = this.state
-    let {summary, temperature, apparentTemperature, uvIndex, humidity} = currently
+    let {weather_query} = this.props
+    console.log({weather_query})
+
+    // the query is loading...
+    if (weather_query && weather_query.loading) {
+      return (
+        <div>
+          <img src="https://loading.io/spinners/bluecat/index.blue-longcat-spinner.svg"/>
+        </div>
+      )
+    }
+
+    // the query has errors
+    if (weather_query && weather_query.error) {
+      return (
+        <div>
+          { weather_query.error.message }
+        </div>
+      )
+    }
+
+  // the query is fine, we have received the data
+    const weatherRender = weather_query.now_weather
+    console.log(weatherRender)
 
     return (
       <div className="App">
-        <header className="App-header">
-          <Container>
-            <h1 className="App-title">Welcome to React</h1>
-          </Container>
-        </header>
-        <Container className="main">
-          <Row>
-            <Col sm="12" md={{ size: 6, offset: 3 }}>
-              <h2 className="display-4">{timezone} is {summary}</h2>
-              <dl>
-                <dt>Temperature</dt>
-                <dd>{temperature}&deg;C (but feels like {apparentTemperature}&deg;C)</dd>
-                <dt>UV Index</dt>
-                <dd>{uvIndex}</dd>
-                <dt>Humidity</dt>
-                <dd>{humidity}</dd>
-              </dl>
-            </Col>
-          </Row>
-        </Container>
-      </div>
-    );
-  }
+        <h4>Temperature<sup> In °C, because imperial units are for losers</sup></h4>
+        <p>{weatherRender.temperature}°C, but feels like {weatherRender.apparentTemperature}°C</p>
 
-  // componentDidMount = async () => {
-  //   const API_URL = 'https://cors-anywhere.herokuapp.com/https://api.darksky.net/forecast/30d7debaeabdcdba68fce0dbd85769a2/1.352083,103.819836'
-  //   const response = await fetch(API_URL)
-  //   const { currently, timezone } = await response.json()
-  //
-  //   console.log( currently, timezone )
-  //
-  //   this.setState({
-  //     currently,
-  //     timezone
-  //   })
-  // }
+        <h4>Summary<sup> In case you have no ability to see the big picture</sup></h4>
+        <p>{weatherRender.summary}</p>
+
+        <h4>"How wet is the air?"</h4>
+        <p>It's at {weatherRender.humidity * 100}% humidity</p>
+      </div>
+    )
+  }
 }
 
-// run graphql query«»
 
-export default App;
+const WEATHER_QUERY = gql`
+query weather_query {
+  now_weather {
+    temperature
+    apparentTemperature
+    summary
+    uvIndex
+    humidity
+  }
+}
+`
+
+export default compose(
+  graphql(WEATHER_QUERY, {name: 'weather_query'})
+)(App)
